@@ -27,7 +27,6 @@
 // Helper function to find a process by pid - used in Task 2.2.3 
 static struct pcb_t *find_process_by_pid(struct krnl_t *krnl, uint32_t pid)
 {
-   struct pcb_t *proc = NULL;
    struct queue_t *running_list = krnl->running_list;
    
    // Search in running_list 
@@ -69,9 +68,8 @@ static struct pcb_t *find_process_by_pid(struct krnl_t *krnl, uint32_t pid)
 }
 
 // Helper function to find a process by name - used in Task 2.2.4
-static struct pcb_t *find_process_by_name(struct krnl_t *krnl, const char *proc_name)
+__attribute__((unused)) static struct pcb_t *find_process_by_name(struct krnl_t *krnl, const char *proc_name)
 {
-   struct pcb_t *proc = NULL;
    struct queue_t *running_list = krnl->running_list;
    
    // Search in running_list
