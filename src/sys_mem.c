@@ -12,9 +12,7 @@
 #include "syscall.h"
 #include "libmem.h"
 #include "queue.h"
-#include "sched.h"
 #include <stdlib.h>
-#include <string.h>
 
 #ifdef MM64
 #include "mm64.h"
@@ -24,132 +22,29 @@
 
 //typedef char BYTE;
 
-// Helper function to find a process by pid - used in Task 2.2.3 
-static struct pcb_t *find_process_by_pid(struct krnl_t *krnl, uint32_t pid)
-{
-   struct queue_t *running_list = krnl->running_list;
-   
-   // Search in running_list 
-   if (running_list != NULL) {
-       for (int i = 0; i < running_list->size; i++) {
-           if (running_list->proc[i] != NULL && running_list->proc[i]->pid == pid) {
-               return running_list->proc[i];
-           }
-       }
-   }
-   
-   // Search in ready_queue
-   if (krnl->ready_queue != NULL) {
-       struct queue_t *ready_queue = krnl->ready_queue;
-       for (int i = 0; i < ready_queue->size; i++) {
-           if (ready_queue->proc[i] != NULL && ready_queue->proc[i]->pid == pid) {
-               return ready_queue->proc[i];
-           }
-       }
-   }
-
-   // Search in MLQ ready queues if available
-#ifdef MLQ_SCHED
-   if (krnl->mlq_ready_queue != NULL) {
-       for (int prio = 0; prio < MAX_PRIO; prio++) {
-           struct queue_t *mlq_queue = &(krnl->mlq_ready_queue[prio]);
-           if (mlq_queue != NULL) {
-               for (int i = 0; i < mlq_queue->size; i++) {
-                   if (mlq_queue->proc[i] != NULL && mlq_queue->proc[i]->pid == pid) {
-                       return mlq_queue->proc[i];
-                   }
-               }
-           }
-       }
-   }
-#endif
-   
-   return NULL;
-}
-
-// Helper function to find a process by name - used in Task 2.2.4
-__attribute__((unused)) static struct pcb_t *find_process_by_name(struct krnl_t *krnl, const char *proc_name)
-{
-   struct queue_t *running_list = krnl->running_list;
-   
-   // Search in running_list
-   if (running_list != NULL) {
-       for (int i = 0; i < running_list->size; i++) {
-           if (running_list->proc[i] != NULL) {
-               // Extract process name from path 
-               const char *path = running_list->proc[i]->path;
-               const char *name = strrchr(path, '/');
-               if (name == NULL) name = path;
-               else name++; /* Skip the '/' */
-               
-               if (strcmp(name, proc_name) == 0) {
-                   return running_list->proc[i];
-               }
-           }
-       }
-   }
-   
-   // Search in ready_queue
-   if (krnl->ready_queue != NULL) {
-       struct queue_t *ready_queue = krnl->ready_queue;
-       for (int i = 0; i < ready_queue->size; i++) {
-           if (ready_queue->proc[i] != NULL) {
-               const char *path = ready_queue->proc[i]->path;
-               const char *name = strrchr(path, '/');
-               if (name == NULL) name = path;
-               else name++;
-               
-               if (strcmp(name, proc_name) == 0) {
-                   return ready_queue->proc[i];
-               }
-           }
-       }
-   }
-   
-   // Search in MLQ ready queues if available
-#ifdef MLQ_SCHED
-   if (krnl->mlq_ready_queue != NULL) {
-       for (int prio = 0; prio < MAX_PRIO; prio++) {
-           struct queue_t *mlq_queue = &(krnl->mlq_ready_queue[prio]);
-           if (mlq_queue != NULL) {
-               for (int i = 0; i < mlq_queue->size; i++) {
-                   if (mlq_queue->proc[i] != NULL) {
-                       const char *path = mlq_queue->proc[i]->path;
-                       const char *name = strrchr(path, '/');
-                       if (name == NULL) name = path;
-                       else name++;
-                       
-                       if (strcmp(name, proc_name) == 0) {
-                           return mlq_queue->proc[i];
-                       }
-                   }
-               }
-           }
-       }
-   }
-#endif
-   
-   return NULL;
-}
-
 int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
 {
    int memop = regs->a1;
    BYTE value;
    
+   /* TODO THIS DUMMY CREATE EMPTY PROC TO AVOID COMPILER NOTIFY 
+    *      need to be eliminated
+	*/
+   struct pcb_t *caller = malloc(sizeof(struct pcb_t));
+
    /*
     * @bksysnet: Please note in the dual spacing design
     *            syscall implementations are in kernel space.
     */
 
-   // Task 2.2.3: Find the process with matching pid using helper function
-   struct pcb_t *caller = find_process_by_pid(krnl, pid);
-   
-   /* If process not found, return error */
-   if (caller == NULL) {
-       printf("Error: Process with PID %u not found\n", pid);
-       return -1;
-   }
+   /* TODO: Traverse proclist to terminate the proc
+    *       stcmp to check the process match proc_name
+    */
+//	struct queue_t *running_list = krnl->running_list;
+
+    /* TODO Maching and marking the process */
+    /* user process are not allowed to access directly pcb in kernel space of syscall */
+    //....
 	
    switch (memop) {
    case SYSMEM_MAP_OP:
