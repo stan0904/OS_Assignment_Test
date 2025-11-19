@@ -71,7 +71,7 @@ static int translate(
 	
 	/* Search in the first level */
 	struct trans_table_t * trans_table = NULL;
-	trans_table = get_trans_table(first_lv, proc->page_table);
+	//trans_table = get_trans_table(first_lv, proc->page_table);
 	if (trans_table == NULL) {
 		return 0;
 	}

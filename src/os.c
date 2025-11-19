@@ -1,4 +1,3 @@
-
 #include "cpu.h"
 #include "timer.h"
 #include "sched.h"
@@ -103,9 +102,9 @@ static void * cpu_routine(void * args) {
 
 static void * ld_routine(void * args) {
 #ifdef MM_PAGING
-	struct memphy_struct* mram = ((struct mmpaging_ld_args *)args)->mram;
-	struct memphy_struct** mswp = ((struct mmpaging_ld_args *)args)->mswp;
-	struct memphy_struct* active_mswp = ((struct mmpaging_ld_args *)args)->active_mswp;
+	struct memphy_struct *mram = ((struct mmpaging_ld_args *)args)->mram;
+	struct memphy_struct **mswp = ((struct mmpaging_ld_args *)args)->mswp;
+	struct memphy_struct *active_mswp = ((struct mmpaging_ld_args *)args)->active_mswp;
 	struct timer_id_t * timer_id = ((struct mmpaging_ld_args *)args)->timer_id;
 #else
 	struct timer_id_t * timer_id = (struct timer_id_t*)args;
@@ -128,6 +127,10 @@ static void * ld_routine(void * args) {
 		krnl->mram = mram;
 		krnl->mswp = mswp;
 		krnl->active_mswp = active_mswp;
+		proc->mm = krnl->mm;
+		proc->mram = krnl->mram;
+		proc->mswp = krnl->mswp;
+		proc->active_mswp = krnl->active_mswp;
 #endif
 		printf("\tLoaded a process at %s, PID: %d PRIO: %ld\n",
 			ld_processes.path[i], proc->pid, ld_processes.prio[i]);
@@ -241,10 +244,10 @@ int main(int argc, char * argv[]) {
 	/* In Paging mode, it needs passing the system mem to each PCB through loader*/
 	struct mmpaging_ld_args *mm_ld_args = malloc(sizeof(struct mmpaging_ld_args));
 
-	mm_ld_args->timer_id = ld_event;
-	mm_ld_args->mram = (struct memphy_struct *) &mram;
-	mm_ld_args->mswp = (struct memphy_struct**) &mswp;
-	mm_ld_args->active_mswp = (struct memphy_struct *) &mswp[0];
+        mm_ld_args->timer_id = ld_event;
+        mm_ld_args->mram = &mram;
+        mm_ld_args->mswp = (struct memphy_struct**)&mswp;
+        mm_ld_args->active_mswp = &mswp[0];
         mm_ld_args->active_mswp_id = 0;
 #endif
 

@@ -1,4 +1,3 @@
-
 #include "cpu.h"
 #include "mem.h"
 #include "mm.h"
@@ -77,6 +76,7 @@ switch (ins.opcode)
 	case ALLOC:
 #ifdef MM_PAGING
 		stat = liballoc(proc, ins.arg_0, ins.arg_1);
+		if (stat!=0) return 1;
 #else
 		stat = alloc(proc, ins.arg_0, ins.arg_1);
 #endif
@@ -90,7 +90,12 @@ switch (ins.opcode)
 		break;
 	case READ:
 #ifdef MM_PAGING
-		stat = libread(proc, ins.arg_0, ins.arg_1, (uint32_t*) &ins.arg_2);
+                uint32_t val=0;
+		stat = libread(proc, ins.arg_0, ins.arg_1, &val);
+		if (stat==0) {
+		  proc->regs[ins.arg_2]=val;
+		} else {
+		return 1;}
 #else
 		stat = read(proc, ins.arg_0, ins.arg_1, ins.arg_2);
 #endif
@@ -98,6 +103,7 @@ switch (ins.opcode)
 	case WRITE:
 #ifdef MM_PAGING
 		stat = libwrite(proc, ins.arg_0, ins.arg_1, ins.arg_2);
+		if (stat!=0) return 1;
 #else
 		stat = write(proc, ins.arg_0, ins.arg_1, ins.arg_2);
 #endif
