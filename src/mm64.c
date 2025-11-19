@@ -183,27 +183,19 @@ int pte_set_fpn(struct pcb_t *caller, addr_t pgn, addr_t fpn)
  **/
 uint32_t pte_get_entry(struct pcb_t *caller, addr_t pgn)
 {
-  struct krnl_t *krnl = caller->krnl;
+//  struct krnl_t *krnl = caller->krnl;
   uint32_t pte = 0;
-  
-#ifdef MM64
   addr_t pgd=0;
   addr_t p4d=0;
   addr_t pud=0;
   addr_t pmd=0;
-  addr_t pt=0;
+  addr_t	pt=0;
 	
   /* TODO Perform multi-level page mapping */
   get_pd_from_pagenum(pgn, &pgd, &p4d, &pud, &pmd, &pt);
   //... krnl->mm->pgd
   //... krnl->mm->pt
   //pte = &krnl->mm->pt;	
-#else
-  // For 32-bit mode, directly access pgd array
-  if (krnl && krnl->mm && krnl->mm->pgd) {
-    pte = krnl->mm->pgd[pgn];
-  }
-#endif
 	
   return pte;
 }

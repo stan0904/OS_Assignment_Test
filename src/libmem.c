@@ -221,115 +221,50 @@ printf("%s:%d\n",__func__,__LINE__);
  */
 int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 {
+
   uint32_t pte = pte_get_entry(caller, pgn);
 
   if (!PAGING_PAGE_PRESENT(pte))
   { /* Page is not online, make it actively living */
     addr_t vicpgn, swpfpn;
-    addr_t vicfpn;
-    addr_t tgtfpn;
-    uint32_t vicpte;
+//    addr_t vicfpn;
+//    addr_t vicpte;
+//  struct sc_regs regs;
 
-    // Task 2.2.3: Check if page is swapped out
-    if (pte & PAGING_PTE_SWAPPED_MASK) {
-      // Page is in SWAP, need to swap it in
-      
-      // Step 1: Get a free frame in RAM for the target page
-      if (MEMPHY_get_freefp(caller->krnl->mram, &tgtfpn) == -1) {
-        // RAM is full, need to swap out a victim page
-        
-        // Find victim page
-        if (find_victim_page(caller->krnl->mm, &vicpgn) == -1) {
-          return -1;
-        }
-        
-        // Get victim's PTE and FPN
-        vicpte = pte_get_entry(caller, vicpgn);
-        if (!PAGING_PAGE_PRESENT(vicpte)) {
-          return -1;
-        }
-        vicfpn = PAGING_FPN(vicpte);
-        
-        // Get free frame in MEMSWP for victim
-        if (MEMPHY_get_freefp(caller->krnl->active_mswp, &swpfpn) == -1) {
-          return -1;
-        }
-        
-        // Swap out victim: copy from RAM to SWAP
-        // Calculate swap offset: swpfpn * PAGING_PAGESZ
-        addr_t swpoff = swpfpn * PAGING_PAGESZ;
-        for (int i = 0; i < PAGING_PAGESZ; i++) {
-          BYTE byte;
-          MEMPHY_read(caller->krnl->mram, vicfpn * PAGING_PAGESZ + i, &byte);
-          MEMPHY_write(caller->krnl->active_mswp, swpoff + i, byte);
-        }
-        
-        // Update victim's PTE: mark as swapped
-        pte_set_swap(caller, vicpgn, 0, swpoff);
-        
-        // Use victim's frame for target page
-        tgtfpn = vicfpn;
-      }
-      
-      // Step 2: Swap in target page from SWAP to RAM
-      // Get swap offset from PTE
-      addr_t swpoff = PAGING_SWP(pte) * PAGING_PAGESZ;
-      
-      // Copy from SWAP to RAM
-      for (int i = 0; i < PAGING_PAGESZ; i++) {
-        BYTE byte;
-        MEMPHY_read(caller->krnl->active_mswp, swpoff + i, &byte);
-        MEMPHY_write(caller->krnl->mram, tgtfpn * PAGING_PAGESZ + i, byte);
-      }
-      
-      // Step 3: Update target page's PTE: mark as present, set FPN
-      pte_set_fpn(caller, pgn, tgtfpn);
-      
-      // Add page to FIFO list for future victim selection
-      enlist_pgn_node(&caller->krnl->mm->fifo_pgn, pgn);
-    } else {
-      // Page not present and not swapped - allocate new frame
-      if (MEMPHY_get_freefp(caller->krnl->mram, &tgtfpn) == -1) {
-        // RAM is full, need to swap out a victim
-        if (find_victim_page(caller->krnl->mm, &vicpgn) == -1) {
-          return -1;
-        }
-        
-        vicpte = pte_get_entry(caller, vicpgn);
-        if (!PAGING_PAGE_PRESENT(vicpte)) {
-          return -1;
-        }
-        vicfpn = PAGING_FPN(vicpte);
-        
-        if (MEMPHY_get_freefp(caller->krnl->active_mswp, &swpfpn) == -1) {
-          return -1;
-        }
-        
-        addr_t swpoff = swpfpn * PAGING_PAGESZ;
-        for (int i = 0; i < PAGING_PAGESZ; i++) {
-          BYTE byte;
-          MEMPHY_read(caller->krnl->mram, vicfpn * PAGING_PAGESZ + i, &byte);
-          MEMPHY_write(caller->krnl->active_mswp, swpoff + i, byte);
-        }
-        
-        pte_set_swap(caller, vicpgn, 0, swpoff);
-        tgtfpn = vicfpn;
-      }
-      
-      // Initialize new frame with zeros
-      for (int i = 0; i < PAGING_PAGESZ; i++) {
-        MEMPHY_write(caller->krnl->mram, tgtfpn * PAGING_PAGESZ + i, 0);
-      }
-      
-      // Set PTE for new page
-      pte_set_fpn(caller, pgn, tgtfpn);
-      enlist_pgn_node(&caller->krnl->mm->fifo_pgn, pgn);
+    /* TODO Initialize the target frame storing our variable */
+//  addr_t tgtfpn 
+
+    /* TODO: Play with your paging theory here */
+    /* Find victim page */
+    if (find_victim_page(caller->krnl->mm, &vicpgn) == -1)
+    {
+      return -1;
     }
+
+    /* Get free frame in MEMSWP */
+    if (MEMPHY_get_freefp(caller->krnl->active_mswp, &swpfpn) == -1)
+    {
+      return -1;
+    }
+
+    /* TODO: Implement swap frame from MEMRAM to MEMSWP and vice versa*/
+
+    /* TODO copy victim frame to swap 
+     * SWP(vicfpn <--> swpfpn)
+     * SYSCALL 1 sys_memmap
+     */
+
+
+    /* Update page table */
+    //pte_set_swap(...);
+
+    /* Update its online status of the target page */
+    //pte_set_fpn(...);
+
+    enlist_pgn_node(&caller->krnl->mm->fifo_pgn, pgn);
   }
 
-  // Get final FPN from updated PTE
-  pte = pte_get_entry(caller, pgn);
-  *fpn = PAGING_FPN(pte);
+  *fpn = PAGING_FPN(pte_get_entry(caller,pgn));
 
   return 0;
 }
@@ -342,26 +277,20 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
  */
 int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
 {
-  // Task 2.2.3: Address translation for read operation
-  // Step 1: Extract VPN and offset from virtual address
   int pgn = PAGING_PGN(addr);
-  int off = PAGING_OFFST(addr);
+//  int off = PAGING_OFFST(addr);
   int fpn;
 
-  // Step 2: Get page in RAM (swap in if needed)
   if (pg_getpage(mm, pgn, &fpn, caller) != 0)
     return -1; /* invalid page access */
 
-  // Step 3: Calculate physical address
-  // Physical Address = (FPN << PAGE_BIT) + Offset
-  int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
+//  int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
 
-  // Step 4: Read from physical memory using syscall
-  struct sc_regs regs;
-  regs.a1 = SYSMEM_IO_READ;
-  regs.a2 = phyaddr;
-  syscall(caller->krnl, caller->pid, 17, &regs); /* SYSCALL 17 sys_memmap */
-  *data = (BYTE)regs.a3;
+  /* TODO 
+   *  MEMPHY_read(caller->krnl->mram, phyaddr, data);
+   *  MEMPHY READ 
+   *  SYSCALL 17 sys_memmap with SYSMEM_IO_READ
+   */
 
   return 0;
 }
@@ -374,26 +303,20 @@ int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
  */
 int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
 {
-  // Task 2.2.3: Address translation for write operation
-  // Step 1: Extract VPN and offset from virtual address
   int pgn = PAGING_PGN(addr);
-  int off = PAGING_OFFST(addr);
+//  int off = PAGING_OFFST(addr);
   int fpn;
 
-  // Step 2: Get the page to MEMRAM, swap from MEMSWAP if needed
+  /* Get the page to MEMRAM, swap from MEMSWAP if needed */
   if (pg_getpage(mm, pgn, &fpn, caller) != 0)
     return -1; /* invalid page access */
 
-  // Step 3: Calculate physical address
-  // Physical Address = (FPN << PAGE_BIT) + Offset
-  int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
 
-  // Step 4: Write to physical memory using syscall
-  struct sc_regs regs;
-  regs.a1 = SYSMEM_IO_WRITE;
-  regs.a2 = phyaddr;
-  regs.a3 = value;
-  syscall(caller->krnl, caller->pid, 17, &regs); /* SYSCALL 17 sys_memmap */
+  /* TODO 
+   *  MEMPHY_write(caller->krnl->mram, phyaddr, value);
+   *  MEMPHY WRITE with SYSMEM_IO_WRITE 
+   * SYSCALL 17 sys_memmap
+   */
 
   return 0;
 }
